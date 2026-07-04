@@ -1,0 +1,52 @@
+flowchart TD
+    START(["setup()"]) --> WIFI_C["Conectar Wi-Fi"]
+    WIFI_C --> MQTT_C["Conectar MQTT ThingsBoard"]
+    MQTT_C --> I2C_I["I2C: OLED 0x3C · IMU 0x68"]
+    I2C_I --> ADC_I["ADC GPIO 34 — sensor pulso"]
+    ADC_I --> GPIO_I["GPIO: encoder IRQ · botões · buzzer"]
+    GPIO_I --> UI_I["OLED — tela mostrador"]
+
+    UI_I --> LOOP(["loop / tasks FreeRTOS"])
+
+    subgraph SENSOR["Task sensores"]
+        READ_HR["Ler pulso AO"]
+        READ_IMU["Ler acelerômetro"]
+        CALC_BPM["BPM · média móvel"]
+        CALC_A["|a| em g"]
+        CHECK_HR{"BPM < 50 ou > 120<br/>por 5 s?"}
+        CHECK_A{"|a| > ACCEL_LIMIT?"}
+        READ_HR --> CALC_BPM
+        READ_IMU --> CALC_A
+        CALC_BPM --> CHECK_HR
+        CALC_A --> CHECK_A
+        CHECK_HR -->|Sim| BUZZ_HR["Buzzer · heart_rate_alert"]
+        CHECK_A -->|Sim| BUZZ_MOT["Buzzer · rapid_motion_alert<br/>cooldown 5 s"]
+    end
+
+    subgraph UI_TASK["Task UI"]
+        ENC_EV["Encoder — trocar tela"]
+        BTN_EV["Botões — clique / long press SOS"]
+        DRAW["OLED — mostrador · saúde · SOS"]
+        ENC_EV --> DRAW
+        BTN_EV --> DRAW
+        CALC_BPM --> DRAW
+    end
+
+    subgraph NET["Task rede"]
+        BUILD["JSON: BPM · accel_magnitude_g<br/>screen · flags de alerta"]
+        PUBLISH["MQTT v1/devices/me/telemetry"]
+        RECON{"Wi-Fi / MQTT OK?"}
+        BUZZ_HR --> BUILD
+        BUZZ_MOT --> BUILD
+        BTN_EV -->|Long press| SOS_MAN["sos_triggered · sos_manual"]
+        SOS_MAN --> BUILD
+        BUILD --> PUBLISH
+        PUBLISH --> RECON
+        RECON -->|Não| RECONNECT["Reconectar"]
+        RECON -->|Sim| LOOP
+        RECONNECT --> LOOP
+    end
+
+    LOOP --> SENSOR
+    LOOP --> UI_TASK
+    LOOP --> NET

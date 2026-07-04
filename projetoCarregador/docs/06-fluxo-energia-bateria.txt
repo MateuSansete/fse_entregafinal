@@ -1,0 +1,25 @@
+flowchart LR
+    subgraph Fonte["Fonte"]
+        BAT["Bateria 9 V"]
+    end
+
+    subgraph Regulacao["Regulação"]
+        BUCK["Step-down 3,3 V"]
+    end
+
+    subgraph Carga["Consumidores"]
+        ESP["ESP32 + Wi-Fi"]
+        OLED_D["OLED 0,98 pol"]
+        IMU_D["IMU"]
+        HR_D["Sensor de pulso"]
+        ENC_D["Encoder + botões"]
+        BUZZ_D["Buzzer"]
+    end
+
+    BAT --> BUCK
+    BUCK --> ESP
+    BUCK --> OLED_D
+    BUCK --> IMU_D
+    BUCK --> HR_D
+    BUCK --> ENC_D
+    BUCK --> BUZZ_D

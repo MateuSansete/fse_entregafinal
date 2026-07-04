@@ -1,0 +1,7 @@
+# Secrets — não versionar credenciais reais
+include/secrets.h
+.pio/
+.vscode/
+.DS_Store
+build/
+*.log

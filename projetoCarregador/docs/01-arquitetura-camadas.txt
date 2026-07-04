@@ -1,0 +1,71 @@
+flowchart TB
+    subgraph HW["Camada Física (Hardware)"]
+        HR["Sensor de Batida de Coração<br/>AO analógico"]
+        IMU["IMU — só acelerômetro<br/>I2C · addr 0x68"]
+        OLED["OLED 0,98 pol I2C<br/>addr 0x3C"]
+        ENC["Encoder Rotativo + Botão SW"]
+        BTN["Botão Navegação / SOS"]
+        BUZZ["Buzzer Ativo"]
+        BAT["Bateria 9 V"]
+        BUCK["Step-down 3,3 V"]
+        ESP["ESP32 DevKit<br/>Wi-Fi integrado"]
+    end
+
+    subgraph FW["Camada Embarcada (Firmware)"]
+        ADC_HR["Leitura ADC GPIO 34<br/>sinal de pulso"]
+        BPM["Algoritmo BPM<br/>HR_LOW 50 · HR_HIGH 120"]
+        IMU_RD["Leitura ax ay az<br/>~50 Hz"]
+        ACCEL["Movimento brusco<br/>|a| > ACCEL_LIMIT"]
+        UI["UI OLED<br/>3 telas"]
+        NAV["Navegação<br/>encoder + botões"]
+        ALERT["Alertas locais<br/>FC · movimento · SOS"]
+        MAP["Estado Global<br/>BPM · tela · flags"]
+        MQTT_PUB["Cliente MQTT<br/>PubSubClient"]
+        WIFI["Stack Wi-Fi<br/>Modo STA"]
+    end
+
+    subgraph NET["Camada de Rede"]
+        ROUTER["Roteador Wi-Fi"]
+    end
+
+    subgraph TB["ThingsBoard"]
+        BROKER["MQTT Broker · :1883"]
+        DEVICE["Device · Access Token"]
+        TELEM["Telemetria · Time-series"]
+        WS["WebSocket · Tempo real"]
+        DASH["Dashboard<br/>BPM · aceleração · alarmes"]
+    end
+
+    subgraph APP["Camada de Aplicação"]
+        UI_REMOTE["Dashboard remoto<br/>métricas em tempo real"]
+        RULES["Regras / Alarmes<br/>FC · movimento · SOS"]
+    end
+
+    BAT --> BUCK --> ESP
+    HR --> ADC_HR
+    IMU --> IMU_RD
+    OLED --> UI
+    ENC --> NAV
+    BTN --> NAV
+    BUZZ --> ALERT
+
+    ADC_HR --> BPM
+    IMU_RD --> ACCEL
+    BPM --> MAP
+    ACCEL --> MAP
+    NAV --> UI
+    MAP --> ALERT
+    MAP --> MQTT_PUB
+    ALERT --> BUZZ
+    UI --> OLED
+    MQTT_PUB --> WIFI
+
+    WIFI --> ROUTER
+    ROUTER --> BROKER
+    BROKER --> DEVICE
+    DEVICE --> TELEM
+    TELEM --> WS
+    TELEM --> DASH
+    WS --> UI_REMOTE
+    TELEM --> RULES
+    DASH --> UI_REMOTE

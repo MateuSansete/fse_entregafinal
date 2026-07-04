@@ -1,0 +1,28 @@
+flowchart LR
+    subgraph Payload["Campos MQTT — seção 4 do README"]
+        hr["heart_rate_bpm<br/>heart_rate_alert"]
+        accel["accel_magnitude_g<br/>rapid_motion_alert"]
+        safety["sos_triggered<br/>sos_manual"]
+        ui["screen"]
+        meta["uptime_s"]
+    end
+
+    subgraph Dashboard["Widgets ThingsBoard"]
+        GAUGE_HR["Gauge BPM"]
+        CHART_HR["Gráfico BPM"]
+        ALARM_HR["Alarme FC alta/baixa"]
+        CHART_A["Gráfico aceleração g"]
+        ALARM_MOT["Alarme movimento brusco"]
+        ALARM_SOS["Alarme SOS manual"]
+        TEXT_SCR["Tela ativa"]
+        UPTIME["Tempo ligado"]
+    end
+
+    hr --> GAUGE_HR
+    hr --> CHART_HR
+    hr --> ALARM_HR
+    accel --> CHART_A
+    accel --> ALARM_MOT
+    safety --> ALARM_SOS
+    ui --> TEXT_SCR
+    meta --> UPTIME

@@ -1,0 +1,28 @@
+flowchart TD
+    subgraph Telas["Telas do OLED"]
+        T0["0 — Mostrador<br/>hora + BPM pequeno"]
+        T1["1 — Saúde<br/>BPM grande + alerta"]
+        T2["2 — SOS<br/>status · instruções"]
+    end
+
+    subgraph Encoder["Encoder rotativo"]
+        CW["Girar horário<br/>próxima tela"]
+        CCW["Girar anti-horário<br/>tela anterior"]
+        SW["Clique SW GPIO 23<br/>confirmar / ação"]
+    end
+
+    subgraph Botao["Botão GPIO 4"]
+        SHORT["Pressão curta<br/>voltar ao mostrador"]
+        LONG["Pressão longa >= 3 s<br/>SOS manual"]
+    end
+
+    T0 --> CW --> T1
+    T1 --> CW --> T2
+    T2 --> CW --> T0
+
+    T1 --> CCW --> T0
+    T2 --> CCW --> T1
+    T0 --> CCW --> T2
+
+    LONG --> T2
+    SHORT --> T0

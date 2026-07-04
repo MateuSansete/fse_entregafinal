@@ -1,0 +1,32 @@
+flowchart TD
+    subgraph IMU["Leitura acelerômetro IMU ~50 Hz"]
+        RAW["ax · ay · az<br/>somente acelerômetro"]
+        MAG["|a| = sqrt(ax²+ay²+az²)<br/>converter para g"]
+    end
+
+    subgraph Alerta["Alerta de movimento brusco"]
+        CHECK{"|a| > ACCEL_LIMIT?<br/>padrão 2.5 g"}
+        BUZZ["Buzzer apita"]
+        COOLDOWN["Cooldown 5 s<br/>ignorar novos alertas"]
+    end
+
+    subgraph Manual["SOS manual — independente do acelerômetro"]
+        BTN_LP["Botão GPIO 4<br/>long press >= 3 s"]
+        SOS["Buzzer + sos_triggered<br/>sos_manual"]
+    end
+
+    RAW --> MAG --> CHECK
+    CHECK -->|Sim| BUZZ
+    BUZZ --> COOLDOWN
+    COOLDOWN --> MAG
+    CHECK -->|Não| MAG
+
+    BTN_LP --> SOS
+
+    subgraph MQTT_OUT["Publicação imediata ThingsBoard"]
+        EVT_M["rapid_motion_alert: true<br/>accel_magnitude_g: float"]
+        EVT_S["sos_triggered: true<br/>sos_manual: true"]
+    end
+
+    BUZZ --> EVT_M
+    SOS --> EVT_S

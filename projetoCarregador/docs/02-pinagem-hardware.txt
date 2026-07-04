@@ -1,0 +1,61 @@
+flowchart LR
+    subgraph ESP32["ESP32 DevKit"]
+        SDA["GPIO 21 SDA"]
+        SCL["GPIO 22 SCL"]
+        G34["GPIO 34 ADC<br/>Sensor pulso AO"]
+        G18["GPIO 18<br/>Encoder CLK"]
+        G19["GPIO 19<br/>Encoder DT"]
+        G23["GPIO 23<br/>Encoder SW"]
+        G4["GPIO 4<br/>Botão SOS / Voltar"]
+        G25["GPIO 25<br/>Buzzer"]
+        V33["3.3 V"]
+        GND["GND"]
+    end
+
+    subgraph I2C_BUS["I2C compartilhado"]
+        OLED["OLED 0.98 pol<br/>0x3C"]
+        IMU["MPU-6050<br/>0x68"]
+    end
+
+    subgraph INPUTS["Entradas"]
+        HR["Sensor Batimento<br/>AO"]
+        ENC["Encoder<br/>CLK · DT · SW"]
+        BTN["Botão<br/>GPIO 4"]
+    end
+
+    subgraph OUTPUTS["Saídas"]
+        BUZZ["Buzzer Ativo"]
+    end
+
+    subgraph POWER["Alimentação"]
+        BAT["Bateria 9 V"]
+        BUCK["Step-down 3.3 V"]
+    end
+
+    BAT --> BUCK --> V33
+
+    SDA --> OLED
+    SCL --> OLED
+    SDA --> IMU
+    SCL --> IMU
+    OLED -.-> V33
+    IMU -.-> V33
+    OLED -.-> GND
+    IMU -.-> GND
+
+    HR --> G34
+    HR -.-> V33
+    HR -.-> GND
+
+    ENC --> G18
+    ENC --> G19
+    ENC --> G23
+    ENC -.-> V33
+    ENC -.-> GND
+
+    BTN --> G4
+    BTN -.-> GND
+
+    G25 --> BUZZ
+    BUZZ -.-> V33
+    BUZZ -.-> GND

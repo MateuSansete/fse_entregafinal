@@ -1,0 +1,10 @@
+flowchart TD
+    A["1. Bateria 9 V + step-down 3,3 V"] --> B["2. Testar I2C — OLED + IMU"]
+    B --> C["3. Testar pulso — ADC GPIO 34"]
+    C --> D["4. Calibrar BPM"]
+    D --> E["5. Testar acelerômetro — ACCEL_LIMIT"]
+    E --> F["6. Encoder + botões — 3 telas OLED"]
+    F --> G["7. Buzzer — FC, movimento e SOS"]
+    G --> H["8. Device no ThingsBoard"]
+    H --> I["9. Firmware MQTT"]
+    I --> J["10. Dashboard — BPM, aceleração, alarmes"]
