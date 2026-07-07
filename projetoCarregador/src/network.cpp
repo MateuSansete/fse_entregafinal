@@ -201,14 +201,18 @@ void networkUpdate() {
     bool publish_needed = appStateConsumePublishRequest() || (now - last_publish_time >= MQTT_TELEMETRY_INTERVAL_MS);
     
     if (publish_needed && state.mqttConnected && g_mqtt_client) {
-        char payload[256];
+        char payload[384];
+        uint32_t uptime_s = now / 1000;
         snprintf(payload, sizeof(payload),
-                 "{\"heartRate\":%.1f,\"heartRateAlert\":%s,\"accelMagnitude\":%.2f,\"rapidMotionAlert\":%s,\"sosTriggered\":%s}",
+                 "{\"heart_rate_bpm\":%.1f,\"heart_rate_alert\":%s,\"accel_magnitude_g\":%.2f,\"rapid_motion_alert\":%s,\"sos_triggered\":%s,\"sos_manual\":%s,\"screen\":\"%s\",\"uptime_s\":%lu}",
                  state.heartRateValid ? state.heartRateBpm : 0.0f,
                  state.heartRateAlert ? "true" : "false",
                  state.accelMagnitudeG,
                  state.rapidMotionAlert ? "true" : "false",
-                 state.sosTriggered ? "true" : "false");
+                 state.sosTriggered ? "true" : "false",
+                 state.sosManual ? "true" : "false",
+                 screenName(state.currentScreen),
+                 (unsigned long)uptime_s);
                  
         int msg_id = esp_mqtt_client_publish(g_mqtt_client, "v1/devices/me/telemetry", payload, 0, 1, 0);
         if (msg_id >= 0) {
@@ -219,3 +223,4 @@ void networkUpdate() {
         }
     }
 }
+
