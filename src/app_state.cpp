@@ -40,10 +40,7 @@ void appStateSetHeartRate(float bpm, bool valid, bool alert) {
 void appStateSetAccel(float magnitudeG, bool rapidMotionAlert) {
     if (xSemaphoreTake(g_mutex, portMAX_DELAY) == pdTRUE) {
         g_state.accelMagnitudeG = magnitudeG;
-        if (rapidMotionAlert) {
-            g_state.rapidMotionAlert = true;
-            g_state.publishNow = true;
-        }
+        g_state.rapidMotionAlert = rapidMotionAlert;
         xSemaphoreGive(g_mutex);
     }
 }
@@ -67,7 +64,14 @@ void appStateTriggerSos(bool manual) {
 
 void appStateSetScreen(ScreenId screen) {
     if (xSemaphoreTake(g_mutex, portMAX_DELAY) == pdTRUE) {
-        g_state.currentScreen = screen;
+        if (g_state.currentScreen != screen) {
+            if (g_state.currentScreen == SCREEN_SOS) {
+                g_state.sosTriggered = false;
+                g_state.sosManual = false;
+            }
+            g_state.currentScreen = screen;
+            g_state.publishNow = true;
+        }
         xSemaphoreGive(g_mutex);
     }
 }

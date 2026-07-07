@@ -139,4 +139,19 @@ void inputsUpdate() {
         g_btn_pressed_ms = 0;
         g_sos_triggered_this_press = false;
     }
+
+    // --- 3. Processamento do Botao do Encoder (SW - GPIO 23) ---
+    int sw_level = gpio_get_level(static_cast<gpio_num_t>(PIN_ENC_SW));
+    static uint32_t last_sw_press = 0;
+    if (sw_level == 0) { // Active Low
+        uint32_t press_now = xTaskGetTickCount() * portTICK_PERIOD_MS;
+        if (press_now - last_sw_press > 300) { // Debounce de 300 ms
+            last_sw_press = press_now;
+            AppState state = appStateSnapshot();
+            if (state.sosTriggered) {
+                appStateSetScreen(SCREEN_WATCHFACE);
+                ESP_LOGI(TAG, "Botao do encoder pressionado. Retornando da tela de SOS para Watchface.");
+            }
+        }
+    }
 }

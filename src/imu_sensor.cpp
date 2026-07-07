@@ -133,11 +133,12 @@ void imuUpdate() {
         }
     }
 
-    // Detecção de movimento brusco
+    // Detecção de movimento brusco com retenção (latching) de 5 segundos (ACCEL_COOLDOWN_MS)
     static uint32_t lastAlertTime = 0;
-    bool sudden_mvmt = magnitude > ACCEL_LIMIT_G;
+    bool is_over_limit = magnitude > ACCEL_LIMIT_G;
+    bool sudden_mvmt = false;
 
-    if (sudden_mvmt) {
+    if (is_over_limit) {
         if (now - lastAlertTime >= ACCEL_COOLDOWN_MS) {
             lastAlertTime = now;
             ESP_LOGW(TAG, "Movimento brusco detectado! Magnitude: %.2f G (Limite: %.2f G)", magnitude, ACCEL_LIMIT_G);
@@ -148,6 +149,11 @@ void imuUpdate() {
             // Solicita envio imediato por telemetria MQTT
             appStateRequestPublish();
         }
+    }
+
+    // O alerta permanece ativo se estiver dentro da janela de 5 segundos desde o último disparo
+    if (lastAlertTime != 0 && (now - lastAlertTime < ACCEL_COOLDOWN_MS)) {
+        sudden_mvmt = true;
     }
 
     // Atualiza o estado global
