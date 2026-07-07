@@ -1,32 +1,68 @@
 # Smartwatch IoT — Apple Watch SE 3
 
-**Trabalho Final — Fundamentos de Sistemas Embarcados (2026-1)**
+> **Trabalho Final — Fundamentos de Sistemas Embarcados 2026/1** · Reprodução com ESP32 do produto apresentado pelo grupo no Trabalho 2: um smartwatch IoT vestível que monitora frequência cardíaca e movimento, exibindo informações locais em tela OLED e integrando telemetria e controle por RPC via ThingsBoard.
+
+<p align="center">
+  <img src="https://img.shields.io/badge/ESP--IDF-v6.0.1-E7352C?style=flat-square&logo=espressif&logoColor=white" alt="ESP-IDF v6.0.1"/>
+  <img src="https://img.shields.io/badge/FreeRTOS-tasks%20%7C%20mutex%20%7C%20spinlocks-6BA539?style=flat-square" alt="FreeRTOS"/>
+  <img src="https://img.shields.io/badge/ThingsBoard-MQTT%20%7C%20RPC-2A6DB0?style=flat-square" alt="ThingsBoard MQTT"/>
+  <img src="https://img.shields.io/badge/linguagem-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white" alt="C++"/>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Disciplina-FSE%20(UnB%2FFGA)-1565C0?style=flat-square" alt="Disciplina FSE"/>
+  <img src="https://img.shields.io/badge/Semestre-2026%2F1-00838F?style=flat-square" alt="2026/1"/>
+</p>
 
 ## Participantes do Grupo
 
+<div align="center">
+
 | Matrícula | Nome completo |
-| :--- | :--- |
-| *A complementar* | — |
+|:---------:|---------------|
+| 211062240 | Mateus Bastos dos Santos |
+| 180116746 | Arthur Heleno do Couto da Silva |
+| 180066161 | Luis Henrique Luz Costa |
+| 180113097 | Daniel Coimbra dos Santos |
+
+</div>
 
 ---
 
 ## 1. Descrição do Produto
 
-O produto selecionado para este projeto é o **Apple Watch SE 3 (GPS)**, um smartwatch focado no monitoramento de saúde (sinais vitais, alertas de frequência cardíaca), detecção de incidentes (queda/movimento brusco) e conectividade wireless robusta (Wi-Fi/MQTT).
+O **Smartwatch IoT** é um dispositivo vestível de saúde e segurança — inspirado no **Apple Watch SE 3** — composto por um **sensor analítico de frequência cardíaca (KY-039)**, uma **IMU MPU6050** para detectar aceleração tridimensional e incidentes de movimento brusco, um **buzzer ativo** para alertas acústicos locais e uma **tela OLED SSD1306** para visualização local. Em vez do ecossistema fechado da Apple, ele publica dados de telemetria via **Wi-Fi/MQTT** na plataforma **ThingsBoard**, exibindo métricas dinâmicas em tempo real e permitindo comandos remotos.
 
-Nesta versão simplificada com o microcontrolador **ESP32 DevKit**, reproduzimos os recursos essenciais do smartwatch comercial em um protótipo vestível funcional integrado com a plataforma de IoT **ThingsBoard**:
-*   **Frequência Cardíaca (BPM):** Medição baseada no sensor analítico PPG (KY-039) acoplado à porta analógica do ESP32 com filtro exponencial digital e alertas no buzzer e na nuvem.
-*   **Alerta de Movimento Brusco:** Magnitude de aceleração lida a partir do acelerômetro MPU-6050 e processada pelo firmware para soar o alarme sonoro local caso ultrapasse 2,5 G.
-*   **Interface Gráfica Local:** Tela OLED de 0,96" com navegação entre Watchface (relógio/data/status de rede), Health Metrics (dados dos sensores e alertas) e Alerta de SOS.
-*   **Navegação Integrada:** Controle das telas através do Rotary Encoder (giro) e botão físico para seleção.
-*   **SOS de Emergência:** Acionamento de pânico manual ao pressionar o botão físico por mais de 3 segundos, alterando a tela do relógio e reportando dados imediatos para a nuvem.
-*   **Conectividade IoT:** Telemetria estruturada em JSON enviada via Wi-Fi Station e protocolo MQTT ao ThingsBoard, com tratamento de comandos remotos RPC (ligar buzzer remotamente).
+<p align="center">
+  <img src="docs/appleWatch.png" alt="Apple Watch SE 3 de referência" width="400"/>
+</p>
+<p align="center"><em>Figura 1: produto de referência — Apple Watch SE 3</em></p>
+
+O problema que o produto resolve é permitir o **monitoramento contínuo e não-invasivo de sinais vitais e segurança de pessoas** (como idosos ou atletas), emitindo alarmes imediatos localmente em caso de arritmia ou quedas, ao mesmo tempo em que disponibiliza esses dados remotamente para cuidadores em uma interface web unificada.
+
+### O que foi reproduzido em relação ao Trabalho 2
+
+**Reproduzido integralmente:**
+
+- **Monitoramento Cardíaco (BPM):** Leitura via pino analógico do sensor de pulso KY-039 acoplado ao ADC1 (GPIO 34) com filtro digital IIR e detector dinâmico de picos.
+- **Detecção de Movimento Brusco:** Magnitude de aceleração `|a| = √(ax² + ay² + az²)` lida via acelerômetro MPU6050 (I2C) para monitorar impactos maiores que 2,5 G.
+- **Interface Local em OLED:** Tela OLED SSD1306 (128x64 pixels) via I2C compartilhado, exibindo Watchface (hora, data, status de rede), Health Metrics (BPM, G, quedas) e a tela de SOS.
+- **Navegação Integrada:** Mudança de telas por giro de Rotary Encoder com suporte a interrupção física e seleção pelo botão integrado (SW).
+- **Alerta de SOS Manual:** Disparo de SOS ao pressionar e segurar o botão físico (GPIO 4) por mais de 3 segundos, acionando o buzzer local e alertando o dashboard.
+- **Conectividade Wi-Fi e MQTT:** Conexão wireless e telemetria estruturada em JSON enviada ao ThingsBoard.
+
+**Adicionado/estendido nesta versão (além do escopo do T2):**
+
+- **Fallback de Simulação (IMU):** Caso a IMU física falhe ou não responda via I2C, o firmware executa uma simulação dinâmica que gera um ruído de repouso em torno de 1,0 G e insere um pico de 2,8 G a cada 15 segundos para validar e testar os alertas do painel web.
+- **RPC Bidirecional Completo:** Processamento de comandos remotos ThingsBoard (método `"buzzer"`) no callback do MQTT, permitindo acionar alarmes sonoros customizados remotamente.
+- **Alerta Crítico Instantâneo:** Lógica de alarme de batimento cardíaco configurada para disparar o buzzer e setar a flag de emergência no ThingsBoard imediatamente ao ler valores fora de [50, 120] BPM (bradicardia e taquicardia).
+- **100% C++ em ESP-IDF Puro:** Uso de tasks FreeRTOS, drivers nativos (`driver/gpio.h`, `driver/i2c.h`, `esp_adc/adc_oneshot.h`) e compilação local da biblioteca `esp-mqtt` para contornar problemas de caracteres Unicode no compilador de caminhos do Windows.
 
 ---
 
 ## 2. Arquitetura da Solução
 
-O smartwatch IoT opera em camadas desde a eletrônica embarcada de leitura de sensores e interface física local até o painel web ThingsBoard de telemetria na nuvem:
+O sistema segue uma arquitetura em camadas, do hardware vestível ao ThingsBoard:
 
 ```mermaid
 graph TD
@@ -51,126 +87,163 @@ graph TD
 
 ### 2.1. Estrutura FreeRTOS
 
-Para coordenar as múltiplas funções críticas do smartwatch de forma assíncrona e não-bloqueante, o firmware utiliza o sistema multitarefas **FreeRTOS** nativo do ESP-IDF:
+Todo o firmware foi desenvolvido em **ESP-IDF** nativo e é coordenado por três tasks FreeRTOS assíncronas com afinidade a núcleos e prioridades otimizadas:
 
-*   **`sensorTask` (Core 1, Prioridade 2):** Executada a cada 2 ms. Responsável pelo cálculo do PPG cardíaco (amostragem ADC a ~200 Hz) e leitura rápida da aceleração linear (MPU-6050 a ~50 Hz). Rodar no Core 1 garante amostragem sem interrupções por operações de I/O ou display.
-*   **`uiTask` (Core 0, Prioridade 1):** Executada a cada 100 ms. Realiza a leitura e debounce dos botões, calcula o delta do encoder rotativo, executa a máquina de estados não-bloqueante do buzzer e renderiza as telas no OLED SSD1306.
-*   **`networkTask` (Core 0, Prioridade 1):** Executada a cada 200 ms. Gerencia a conexão Wi-Fi e sincronização MQTT. Publica dados em tempo real a cada 10 segundos ou instantaneamente na ocorrência de quedas/SOS.
+<div align="center">
 
-#### Mecanismos de Sincronização e Comunicação:
-*   **Mutexes (FreeRTOS Mutual Exclusion):** A estrutura de estado centralizada `AppState` é encapsulada em `app_state.cpp` e protegida contra race conditions por um mutex. Todas as leituras e escritas das tarefas acessam o estado através de funções thread-safe (`appStateSnapshot()`, `appStateSetNetwork()`, etc.).
-*   **Spinlocks de Hardware (SMP Muxes):** O acumulador do encoder rotativo (`g_encoder_delta`) é alterado no contexto de interrupção (ISR) de descida no GPIO 18 e consumido periodicamente na `uiTask`. O acesso é sincronizado usando `portENTER_CRITICAL(&g_encoder_mux)` para prevenir contenção de barramento entre núcleos.
+| Task | Responsabilidade | Período / Taxa | Prioridade | Core |
+|------|------------------|:--------------:|:----------:|:----:|
+| `sensors` (`sensorTask`) | Amostragem de picos do sinal PPG do KY-039 e leituras de aceleração linear da IMU MPU6050 | 2 ms (500 Hz) | 2 | 1 |
+| `ui` (`uiTask`) | Leitura de botões (debounce), processador do Rotary Encoder, controle temporizado do buzzer e renderização local do OLED | 100 ms (10 Hz) | 1 | 0 |
+| `network` (`networkTask`) | Gerenciamento de eventos de rede Wi-Fi, publicação MQTT e despacho de telemetria | 200 ms (5 Hz) | 1 | 0 |
+
+</div>
+
+**Mecanismos de sincronização e comunicação entre tasks:**
+
+- **Mutex de Estado Compartilhado (`app_state.cpp`):** A leitura e a escrita das variáveis globais da struct `AppState` (BPM, Magnitude G, status das flags de alarme e da tela ativa) são isoladas por um Mutex do FreeRTOS, garantindo leitura e gravação thread-safe entre núcleos.
+- **Spinlocks de Hardware (Encoder):** A leitura física de giros do encoder é tratada via interrupção (ISR) de GPIO no pino CLK (GPIO 18), alterando de forma assíncrona a variável `g_encoder_delta`. O acesso a esta variável na `uiTask` é sincronizado através do spinlock SMP `portENTER_CRITICAL()` para impedir race conditions.
+- **Heartbeat e Envio por Demanda:** A telemetria é despachada periodicamente a cada 10 segundos. Contudo, ao acionar o SOS ou detectar movimento brusco, a função `appStateRequestPublish()` sinaliza `publishNow` no estado e a `networkTask` envia os dados imediatamente à nuvem.
+
+---
 
 ### 2.2. Sensores e Atuadores (Entradas e Saídas)
 
+Pinagem conforme arquivos de hardware configurados em `include/config.h`:
+
+<div align="center">
+
 | Componente | Tipo (Entrada/Saída) | Pino(s) ESP32 | Função no produto |
-| :--- | :--- | :--- | :--- |
-| **KY-039 (Batimento)** | Entrada (Analógica) | GPIO 34 (ADC1_CH6) | Leitura do nível de absorção infravermelha para calcular o batimento cardíaco (BPM). |
-| **MPU-6050 (Acelerômetro)** | Entrada (I2C) | SDA: **21** / SCL: **22** | Coleta de aceleração linear triaxial para detecção de movimento brusco. |
-| **Rotary Encoder (CLK)** | Entrada (Digital + IRQ) | GPIO 18 | Interrupção externa na borda de descida para contagem de pulsos. |
-| **Rotary Encoder (DT)** | Entrada (Digital) | GPIO 19 | Leitura de nível lógico para determinar o sentido do giro do encoder. |
-| **Encoder Botão (SW)** | Entrada (Digital) | GPIO 23 | Clique do botão integrado no encoder para seleção/confirmação. |
-| **Botão SOS / Navegação** | Entrada (Digital) | GPIO 4 | Clique curto avança de tela. Clique longo (>= 3s) dispara o alerta de SOS. |
-| **Buzzer Ativo** | Saída (Digital) | GPIO 25 | Alerta acústico intermitente (arritmia, movimento brusco e código Morse de SOS). |
-| **OLED 0,96" (SSD1306)** | Saída (I2C) | SDA: **21** / SCL: **22** | Renderização local em tempo real das interfaces do smartwatch. |
+|------------|----------------------|---------------|-------------------|
+| **KY-039 (Batimento)** | Entrada (analógica) | GPIO 34 (ADC1_CH6) | Leitura do sinal infravermelho PPG para cálculo de frequência cardíaca. |
+| **IMU MPU6050 (Acelerômetro)** | Entrada (I2C) | SDA: **21** / SCL: **22** | Leitura de aceleração linear para identificar quedas. |
+| **OLED 0,96" (SSD1306)** | Saída (I2C) | SDA: **21** / SCL: **22** | Exibe hora, data, BPM, magnitude de aceleração e SOS localmente. |
+| **Rotary Encoder (CLK)** | Entrada (digital + IRQ) | GPIO 18 | Interrupção externa de descida para incremento de rotação. |
+| **Rotary Encoder (DT)** | Entrada (digital) | GPIO 19 | Sentido de rotação do encoder. |
+| **Encoder Botão (SW)** | Entrada (digital) | GPIO 23 | Botão de seleção (seleciona/confirma nos submenus). |
+| **Botão SOS / Navegação** | Entrada (digital) | GPIO 4 | Clique curto avança de tela. Clique longo (>= 3s) ativa o SOS. |
+| **Buzzer Ativo** | Saída (digital) | GPIO 25 | Avisos acústicos de segurança de taquicardia, bradicardia, queda e SOS Morse. |
+
+</div>
 
 ---
 
 ## 3. Comunicação Wireless
 
-A comunicação do wearable utiliza a pilha TCP/IP do ESP-IDF no modo **Wi-Fi Station (STA)** com reconexão automática e event loop assíncrono.
+A comunicação do smartwatch utiliza a pilha nativa do ESP-IDF no modo **Wi-Fi Station (STA)** com conexões automáticas e event handlers no loop de rede para lidar com quedas e reconexão automática em segundo plano.
 
-### 3.1. Integração com Thingsboard / MQTT
+### 3.1. Integração com ThingsBoard / MQTT
 
-*   **Telemetria:** Os dados são publicados periodicamente a cada 10 segundos no tópico `v1/devices/me/telemetry` com o seguinte payload JSON:
-    ```json
-    {
-      "heartRate": 72.5,
-      "heartRateAlert": false,
-      "accelMagnitude": 1.02,
-      "rapidMotionAlert": false,
-      "sosTriggered": false
-    }
-    ```
-*   **RPC (comandos remotos):** O smartwatch subscreve-se ao tópico `v1/devices/me/rpc/request/+`. Ao receber o comando `"buzzer"`, ele aciona o bip de teste local por uma duração específica em milissegundos e envia a confirmação de execução para o tópico `v1/devices/me/rpc/response/{request_id}` com o payload `{"success":true}`.
+O cliente MQTT local autentica no broker ThingsBoard informando o **Access Token** do device como username, operando nos seguintes tópicos da plataforma:
+
+<div align="center">
+
+| Canal | Tópico | Direção |
+|-------|--------|:-------:|
+| Telemetria | `v1/devices/me/telemetry` | ESP32 ➡️ ThingsBoard |
+| RPC (recebimento) | `v1/devices/me/rpc/request/+` | ThingsBoard ➡️ ESP32 |
+| RPC (resposta) | `v1/devices/me/rpc/response/<request_id>` | ESP32 ➡️ ThingsBoard |
+
+</div>
+
+**Telemetria:** O payload estruturado em JSON com as chaves snake_case mapeadas é enviado periodicamente ou em pânico:
+```json
+{
+  "heart_rate_bpm": 72.5,
+  "heart_rate_alert": false,
+  "accel_magnitude_g": 1.02,
+  "rapid_motion_alert": false,
+  "sos_triggered": false,
+  "sos_manual": false,
+  "screen": "watchface",
+  "uptime_s": 3600
+}
+```
+
+**RPC (comandos remotos):**
+*   **`buzzer`:** Recebe um comando com parâmetro de milissegundos `{"params": duration}`. O smartwatch soa o buzzer de teste por esse período e responde no tópico de resposta correspondente com o payload `{"success":true}`.
 
 ---
 
 ## 4. Como Compilar e Executar
 
 ### 4.1. Pré-requisitos
-*   **ESP-IDF v6.0.1** (ou posterior) devidamente instalado no sistema.
-*   Ferramentas do ESP-IDF (como CMake, Ninja, Python 3) ativadas nas variáveis de ambiente.
+- **ESP-IDF v6.0.1** instalado e exportado no PATH do terminal.
+- Placa ESP32 DevKit montada e conectada ao computador.
 
 ### 4.2. Configuração
-Copie o arquivo de credenciais exemplo para criar seu cabeçalho secreto em `include/secrets.h`:
+Copie o arquivo de exemplo para criar o cabeçalho secreto local do firmware:
 ```bash
 cp include/secrets.h.example include/secrets.h
 ```
 
-Preencha suas informações de Wi-Fi e token do ThingsBoard no arquivo [include/secrets.h](file:///X:/include/secrets.h):
+Configure suas credenciais no arquivo [include/secrets.h](file:///X:/include/secrets.h):
 ```cpp
-#define WIFI_SSID "NOME_DO_WIFI"
-#define WIFI_PASSWORD "SENHA_DO_WIFI"
-#define TB_ACCESS_TOKEN "SEU_ACCESS_TOKEN"
+#define WIFI_SSID "Wokwi-GUEST"
+#define WIFI_PASSWORD ""
+#define TB_ACCESS_TOKEN "v1p4g0cr_s1m_trabalho"
 #define TB_MQTT_HOST "demo.thingsboard.io"
 #define TB_MQTT_PORT 1883
 ```
 
 ### 4.3. Compilação e Gravação
-Para compilar o projeto de forma nativa e rápida utilizando CMake e Ninja no drive virtual mapeado `X:\`:
+Com o terminal configurado, compile e grave o binário usando o CMake/Ninja integrado ao ESP-IDF:
 
 ```bash
-# Configura o projeto para o ESP32
+# Configura o target para ESP32
 cmake -G Ninja -B build
 
-# Compila o firmware
+# Compila o binário smartwatch.bin
 ninja -C build
 
-# Grava na placa ESP32 (exemplo de porta COM3 no Windows)
-esptool.py --chip esp32 -p COM3 write_flash -z 0x10000 build/smartwatch.bin
+# Grava na ESP32 (substitua <PORTA> pela porta COM do Windows ou ttyUSB do Linux)
+esptool.py --chip esp32 -p <PORTA> write_flash -z 0x10000 build/smartwatch.bin
 ```
+
+### 4.4. Configuração do ThingsBoard
+1. Crie um dispositivo do tipo **MQTT** no seu ThingsBoard.
+2. Copie o **Access Token** gerado nas credenciais do device e cole no arquivo `secrets.h`.
+3. Com a ESP32 conectada (LED azul/verde indicando online), certifique-se de que a telemetria JSON é recebida na aba *Latest telemetry*.
+4. Importe o dashboard JSON configurado para exibir gráficos de BPM, magnitude de aceleração linear, status de alerta crítico e SOS.
 
 ---
 
 ## 5. Estrutura do Código
 
-O firmware do smartwatch foi modularizado em subsistemas e integrado com a biblioteca local do cliente MQTT (esp-mqtt) para garantir compilação offline segura:
-
 ```text
 X:\
-├── CMakeLists.txt              # Configurações do projeto e target CMake
-├── platformio.ini              # Configuração auxiliar PlatformIO
-├── sdkconfig                   # Arquivo de configuração de Kconfig da ESP-IDF
+├── CMakeLists.txt              # Script de compilação CMake raiz
+├── platformio.ini              # Configurações de suporte para o PlatformIO
+├── sdkconfig                   # Kconfig com opções da ESP-IDF
 ├── include/                    # Diretório de Cabeçalhos
-│   ├── app_state.h             # Interface thread-safe do estado do smartwatch
-│   ├── buzzer.h                # Definição dos padrões sonoros do buzzer
-│   ├── config.h                # Pinos e constantes temporais
-│   ├── display_ui.h            # Renderização de menus e fontes SSD1306
-│   ├── heart_rate.h            # Configuração ADC e picos cardíacos
-│   ├── imu_sensor.h            # Leitura I2C da aceleração
-│   ├── inputs.h                # Debouncing de botões e ISR de encoder
-│   ├── network.h               # Handlers de Wi-Fi e conexão MQTT
-│   ├── secrets.h               # Token ThingsBoard e credenciais Wi-Fi (oculto)
-│   └── (headers esp-mqtt...)   # Arquivos de cabeçalho copiados do esp-mqtt
+│   ├── app_state.h             # Estado sincronizado do smartwatch
+│   ├── buzzer.h                # Máquina de estados do alarme acústico
+│   ├── config.h                # Definição de GPIOs e timers do hardware
+│   ├── display_ui.h            # Renderização de fontes SSD1306 e layouts
+│   ├── heart_rate.h            # ADC oneshot e processamento do KY-039
+│   ├── imu_sensor.h            # Driver I2C do MPU-6050
+│   ├── inputs.h                # Tratamento do Rotary Encoder e botões
+│   ├── network.h               # Loop de eventos Wi-Fi Station e MQTT
+│   ├── secrets.h               # Credenciais de conexão (gerado a partir de secrets.h.example)
+│   └── (headers esp-mqtt...)   # Arquivos de cabeçalho da biblioteca MQTT local
 └── src/                        # Código Fonte (.cpp e .c)
-    ├── CMakeLists.txt          # Fontes e dependências registradas na ESP-IDF
-    ├── main.cpp                # Ponto de entrada (app_main) e tasks FreeRTOS
+    ├── CMakeLists.txt          # Fontes e dependências registradas
+    ├── main.cpp                # app_main e tasks do FreeRTOS
     ├── app_state.cpp           # Armazenamento e lock de Mutex do estado
-    ├── buzzer.cpp              # Sequenciador de passos de alerta sonoro
-    ├── display_ui.cpp          # Tabela de fonte 5x7 e desenhos de tela
-    ├── heart_rate.cpp          # Filtro exponencial IIR e BPM cardíaco
-    ├── imu_sensor.cpp          # Magnitude do acelerômetro e cooldown de queda
-    ├── inputs.cpp              # Máquina de cliques de botão e ISR do encoder
-    ├── network.cpp             # Máquina de conexão Wi-Fi/MQTT e parsing RPC
-    └── (código esp-mqtt...)    # Fontes em C do esp-mqtt compilados localmente
+    ├── buzzer.cpp              # Temporização não-bloqueante do buzzer
+    ├── display_ui.cpp          # Fonte de texto 5x7 e buffer I2C
+    ├── heart_rate.cpp          # Algoritmo de filtro e BPM do KY-039
+    ├── imu_sensor.cpp          # Leitura do acelerômetro e lógica de fallback
+    ├── inputs.cpp              # ISR do encoder e debounce de botões
+    ├── network.cpp             # Máquina de Wi-Fi/MQTT e processamento RPC
+    └── (código esp-mqtt...)    # Fontes C do cliente MQTT local
 ```
 
 ---
 
 ## 6. Vídeo de Demonstração
 
-O vídeo contendo a demonstração de funcionamento de cada driver, transição de telas através do encoder rotativo, detecção de movimento brusco e recebimento de telemetria no ThingsBoard está disponível no link abaixo:
+O vídeo contendo a demonstração de funcionamento de cada driver, transição de telas através do encoder rotativo, detecção de movimento brusco e envio de telemetria no ThingsBoard está disponível no link abaixo:
 
 *   🎥 **Link do vídeo:** [adicionar link do vídeo aqui]
 
@@ -178,6 +251,7 @@ O vídeo contendo a demonstração de funcionamento de cada driver, transição 
 
 ## 7. Referências
 
-*   [ESP-IDF Programming Guide — ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
-*   [ThingsBoard MQTT API Reference](https://thingsboard.io/docs/reference/mqtt-api/)
-*   [SSD1306 Display Controller Datasheet](https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf)
+- [ESP-IDF Programming Guide — ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
+- [ThingsBoard MQTT API Reference](https://thingsboard.io/docs/reference/mqtt-api/)
+- [MPU-6050 Register Map and Datasheet (InvenSense)](https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf)
+- [SSD1306 Display Controller Datasheet](https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf)
