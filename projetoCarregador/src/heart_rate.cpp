@@ -17,7 +17,6 @@ static const size_t HR_BUFFER_SIZE = 800;
 static int g_samples[HR_BUFFER_SIZE];
 static size_t g_sampleCount = 0;
 static uint32_t g_windowStart = 0;
-static uint32_t g_alertSince = 0;
 static bool g_alertActive = false;
 static float g_smoothedBpm = 0.0f;
 
@@ -139,16 +138,12 @@ void heartRateUpdate() {
 
     bool outOfRange = valid && (g_smoothedBpm < HR_LOW_BPM || g_smoothedBpm > HR_HIGH_BPM);
     if (outOfRange) {
-        if (g_alertSince == 0) {
-            g_alertSince = now;
-        }
-        if (!g_alertActive && (now - g_alertSince) >= HR_ALERT_PERSIST_MS) {
+        if (!g_alertActive) {
             g_alertActive = true;
             buzzerPatternHrAlert();
             appStateRequestPublish();
         }
     } else {
-        g_alertSince = 0;
         g_alertActive = false;
     }
 
