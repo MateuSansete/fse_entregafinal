@@ -126,7 +126,7 @@ void heartRateUpdate() {
     }
 
     const float rawBpm = computeBpmFromPeaks();
-    const bool valid = rawBpm >= HR_LOW_BPM && rawBpm <= 200.0f;
+    const bool valid = rawBpm >= 35.0f && rawBpm <= 200.0f;
 
     if (valid) {
         if (g_smoothedBpm <= 0.0f) {
